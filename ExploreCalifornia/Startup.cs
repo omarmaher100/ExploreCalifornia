@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ExploreCalifornia.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +30,11 @@ namespace ExploreCalifornia
                 DeveloperExceptions = configuration.GetValue<bool>("FeatureToggles:DeveloperExceptions")
             });
 
+            services.AddDbContext<BlogDataContext>(options=> 
+            {
+                var connectionString = configuration.GetConnectionString("Blog");
+                options.UseSqlServer(connectionString);
+            });
             services.AddMvc();
         }
 
