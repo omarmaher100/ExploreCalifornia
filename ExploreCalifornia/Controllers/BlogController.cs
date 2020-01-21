@@ -12,15 +12,36 @@ namespace ExploreCalifornia.Controllers
     [Route("blog")]
     public class BlogController : Controller
     {
-        private readonly BlogDataContext _dp;
-        public BlogController(BlogDataContext dp)
+        private readonly BlogDataContext _db;
+        public BlogController(BlogDataContext db)
         {
-            _dp = dp;
+            _db = db;
         }
         [Route("")]
-        public IActionResult Index()
+        public IActionResult Index(int page = 0)
         {
-            var posts = _dp.Posts.OrderByDescending(x=>x.Posted).Take(4).ToArray();
+            //var posts = _dp.Posts.OrderByDescending(x=>x.Posted).Take(4).ToArray();
+            //pageing
+            var pageSize = 2;
+            var totalPosts = _db.Posts.Count();
+            var totalPages = totalPosts / pageSize;
+            var previousPage = page - 1;
+            var nextPage = page + 1;
+
+            ViewBag.PreviousPage = previousPage;
+            ViewBag.HasPreviousPage = previousPage >= 0;
+            ViewBag.NextPage = nextPage;
+            ViewBag.HasNextPage = nextPage < totalPages;
+
+            var posts =
+                _db.Posts
+                    .OrderByDescending(x => x.Posted)
+                    .Skip(pageSize * page)
+                    .Take(pageSize)
+                    .ToArray();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return PartialView(posts);
 
             return View(posts);
         }
@@ -28,7 +49,7 @@ namespace ExploreCalifornia.Controllers
         [Route("{year:min(2000)}/{month:range(1,12)}/{key}")]
         public IActionResult Post(int year, int month, string key)
         {
-            var post = _dp.Posts.FirstOrDefault(x=>x.Key == key);
+            var post = _db.Posts.FirstOrDefault(x=>x.Key == key);
 
             return View(post);
         }
@@ -49,8 +70,8 @@ namespace ExploreCalifornia.Controllers
             post.Author = User.Identity.Name;
             post.Posted = DateTime.Now;
 
-            _dp.Posts.Add(post);
-            _dp.SaveChanges();
+            _db.Posts.Add(post);
+            _db.SaveChanges();
 
             return RedirectToAction("Post","Blog" , new
             { 
